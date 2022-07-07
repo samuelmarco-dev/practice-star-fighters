@@ -2,7 +2,7 @@ import sqlstring from 'sqlstring';
 import db from '../config/database.js'
 
 async function getRanking() {
-    const sql = sqlstring.format(`
+    const sql: string = sqlstring.format(`
         SELECT * FROM "fighters" ORDER BY "wins" DESC, "draws" DESC
     `, []);
 

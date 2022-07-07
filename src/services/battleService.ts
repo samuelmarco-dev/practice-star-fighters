@@ -1,14 +1,14 @@
 import axios from "axios";
 import dotenv from 'dotenv';
-import battleRepository from "../repositories/battleRepository.js";
 dotenv.config();
+
+import battleRepository from "../repositories/battleRepository.js";
 
 async function findUserInGitHubAPI(user: string){
     const url: string = process.env.API_GITHUB;
     const {data} = await axios.get(`${url}/${user}`);
-    console.log('data', data);
 
-    if(data.message === "Not Found"){
+    if(data.message){
         throw{
             type: "UserNotFound",
             message: "User not found"
@@ -49,19 +49,16 @@ async function verifyBattleReposUser(
 
     const numberStarFirstUser = returnNumberStargazersUser(dataFirstUser, reposFirstUser);
     const numberStarSecondUser = returnNumberStargazersUser(dataSecondUser, reposSecondUser);
-    console.log('numberStarFirstUser', numberStarFirstUser);
-    console.log('numberStarSecondUser', numberStarSecondUser);
 
     return await returnObjectBattleRequest(numberStarFirstUser, numberStarSecondUser, nameFirst, nameSecond);
 }
 
 function returnNumberStargazersUser(arr: any[], numberRepos: number){
-    if(numberRepos === 0 || !arr) return 0;
+    if(numberRepos === 0 || !arr || !arr.length) return 0;
 
     const numberStar: number[] = arr.map(item => {
         return item.stargazers_count;
     });
-    console.log('numberStar', numberStar);
 
     return numberStar.reduce((total: number, number: number)=> {
         return total + number;
@@ -72,37 +69,53 @@ async function returnObjectBattleRequest(starFirstUser: number, starSecondUser: 
     if(starFirstUser > starSecondUser){
         await insertResultBattleInDatabase(nameFirst, 1, 0, 0);
         await insertResultBattleInDatabase(nameSecond, 0, 1, 0);
-        return {
+
+        const objBattle: {
+            winner: string,
+            loser: string,
+            draws: boolean
+        } = {
             "winner": nameFirst,
             "loser": nameSecond,
             "draws": false
         }
+        return objBattle;
     }
     if(starFirstUser < starSecondUser){
         await insertResultBattleInDatabase(nameFirst, 0, 1, 0);
         await insertResultBattleInDatabase(nameSecond, 1, 0, 0);
-        return {
+
+        const objBattle: {
+            winner: string,
+            loser: string,
+            draws: boolean
+        } = {
             "winner": nameSecond,
             "loser": nameFirst,
             "draws": false
         }
+        return objBattle;
     }
     await insertResultBattleInDatabase(nameFirst, 0, 0, 1);
     await insertResultBattleInDatabase(nameSecond, 0, 0, 1);
-    return {
+
+    const objBattle: {
+        winner: null,
+        loser: null,
+        draws: boolean
+    } = {
         "winner": null,
         "loser": null,
         "draws": true
     }
+    return objBattle;
 }
 
 async function insertResultBattleInDatabase(name: string, win: number, lose: number, draws: number){
-    const battleUser: any = await battleRepository.findBattleStargazers(name);
+    const battleUser = await battleRepository.findBattleStargazers(name);
     const [user] = battleUser.rows;
-    console.log('battleUser', battleUser);
-    console.log('user', user);
 
-    if(!user || !battleUser.rowCount){
+    if(!user || battleUser.rowCount !== 1){
         await battleRepository.resultStargazersBattle(name, win, lose, draws);
         return;
     }

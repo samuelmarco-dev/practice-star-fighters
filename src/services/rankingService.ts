@@ -2,11 +2,13 @@ import rankingRepository from '../repositories/rankingRepository.js';
 
 async function returnRankingUsers(){
     const rankingGeneral = await rankingRepository.getRanking();
-    console.log('rankingGeneral', rankingGeneral);
 
-    return {
-        "fighters": rankingGeneral.rows
+    const objRanking: {
+        fighters: any[]
+    } = {
+        fighters: rankingGeneral.rows
     }
+    return objRanking;
 }
 
 const rankigService = {
