@@ -1,11 +1,12 @@
 import axios from "axios";
 import dotenv from 'dotenv';
-import battleRepository from "../repositories/battleRepository";
+import battleRepository from "../repositories/battleRepository.js";
 dotenv.config();
 
 async function findUserInGitHubAPI(user: string){
     const url: string = process.env.API_GITHUB;
     const {data} = await axios.get(`${url}/${user}`);
+    console.log('data', data);
 
     if(data.message === "Not Found"){
         throw{
@@ -48,8 +49,10 @@ async function verifyBattleReposUser(
 
     const numberStarFirstUser = returnNumberStargazersUser(dataFirstUser, reposFirstUser);
     const numberStarSecondUser = returnNumberStargazersUser(dataSecondUser, reposSecondUser);
+    console.log('numberStarFirstUser', numberStarFirstUser);
+    console.log('numberStarSecondUser', numberStarSecondUser);
 
-    return returnObjectBattleRequest(numberStarFirstUser, numberStarSecondUser, nameFirst, nameSecond);
+    return await returnObjectBattleRequest(numberStarFirstUser, numberStarSecondUser, nameFirst, nameSecond);
 }
 
 function returnNumberStargazersUser(arr: any[], numberRepos: number){
@@ -58,14 +61,17 @@ function returnNumberStargazersUser(arr: any[], numberRepos: number){
     const numberStar: number[] = arr.map(item => {
         return item.stargazers_count;
     });
+    console.log('numberStar', numberStar);
 
     return numberStar.reduce((total: number, number: number)=> {
         return total + number;
     }, 0);
 }
 
-function returnObjectBattleRequest(starFirstUser: number, starSecondUser: number, nameFirst: string, nameSecond: string){
+async function returnObjectBattleRequest(starFirstUser: number, starSecondUser: number, nameFirst: string, nameSecond: string){
     if(starFirstUser > starSecondUser){
+        await insertResultBattleInDatabase(nameFirst, 1, 0, 0);
+        await insertResultBattleInDatabase(nameSecond, 0, 1, 0);
         return {
             "winner": nameFirst,
             "loser": nameSecond,
@@ -73,12 +79,16 @@ function returnObjectBattleRequest(starFirstUser: number, starSecondUser: number
         }
     }
     if(starFirstUser < starSecondUser){
+        await insertResultBattleInDatabase(nameFirst, 0, 1, 0);
+        await insertResultBattleInDatabase(nameSecond, 1, 0, 0);
         return {
             "winner": nameSecond,
             "loser": nameFirst,
             "draws": false
         }
     }
+    await insertResultBattleInDatabase(nameFirst, 0, 0, 1);
+    await insertResultBattleInDatabase(nameSecond, 0, 0, 1);
     return {
         "winner": null,
         "loser": null,
@@ -86,16 +96,18 @@ function returnObjectBattleRequest(starFirstUser: number, starSecondUser: number
     }
 }
 
-async function insertResultBattleInDatabase(nameFirst: string | null, nameSecond: string | null){
-    const battleFirstUser: any = await battleRepository.findBattleStargazers(nameFirst);
-    const [user] = battleFirstUser;
-    if(!user || !battleFirstUser.rowCount){
-        await battleRepository.updateResultStargazersBattle(nameFirst, 1, 0, 0);
+async function insertResultBattleInDatabase(name: string, win: number, lose: number, draws: number){
+    const battleUser: any = await battleRepository.findBattleStargazers(name);
+    const [user] = battleUser.rows;
+    console.log('battleUser', battleUser);
+    console.log('user', user);
+
+    if(!user || !battleUser.rowCount){
+        await battleRepository.resultStargazersBattle(name, win, lose, draws);
+        return;
     }
-
-    const battleSecondUser = await battleRepository.findBattleStargazers(nameSecond);
-
-    if(!nameFirst || !nameSecond) return;
+    await battleRepository.updateResultStargazersBattle(name, user.wins + win, user.losses + lose, user.draws + draws);
+    return;
 }
 
 const battleService = {

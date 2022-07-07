@@ -5,6 +5,8 @@ async function findBattleStargazers(username: string) {
     const sql = sqlstring.format(`
         SELECT * FROM "fighters" WHERE "username" = ?
     `, [username]);
+
+    return db.query(sql);
 }
 
 async function resultStargazersBattle(username: string, wins: number, loses: number, draws: number) {
