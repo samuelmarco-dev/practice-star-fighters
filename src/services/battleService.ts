@@ -6,31 +6,38 @@ import battleRepository from "../repositories/battleRepository.js";
 
 async function findUserInGitHubAPI(user: string){
     const url: string = process.env.API_GITHUB;
-    const {data} = await axios.get(`${url}/${user}`);
 
-    if(data.message){
+    try {
+        const {data} = await axios.get(`${url}/${user}`);
+        if(data.message){
+            throw{
+                type: "UserNotFound",
+                message: "User not found"
+            }
+        }
+
+        const {login, id, repos_url, name, public_repos} = data
+        const objectUser: {
+            login: string,
+            id: number,
+            repos_url: string,
+            name: string,
+            public_repos: number
+        } = {
+            login,
+            id,
+            repos_url,
+            name,
+            public_repos
+        }
+
+        return objectUser;
+    } catch (error) {
         throw{
             type: "UserNotFound",
             message: "User not found"
         }
     }
-
-    const {login, id, repos_url, name, public_repos} = data
-    const objectUser: {
-        login: string,
-        id: number,
-        repos_url: string,
-        name: string,
-        public_repos: number
-    } = {
-        login,
-        id,
-        repos_url,
-        name,
-        public_repos
-    }
-
-    return objectUser;
 }
 
 async function verifyBattleReposUser(
