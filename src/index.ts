@@ -7,8 +7,8 @@ dotenv.config();
 import morgan from 'morgan';
 import chalk from 'chalk';
 
-import { handleError } from './middlewares/errorMiddleware';
-import routesApp from './routers';
+import { handleError } from './middlewares/errorMiddleware.js';
+import routesApp from './routers/index.js';
 
 const app = express();
 app.use(cors());

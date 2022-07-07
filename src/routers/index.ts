@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
-import battleRouter from './battleRouter';
-import rankingRouter from './rankingRouter';
+import battleRouter from './battleRouter.js';
+import rankingRouter from './rankingRouter.js';
 
 const routesApp: Router = Router();
 
